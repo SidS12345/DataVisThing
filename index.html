@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Global Employment Migration Policy Dashboard</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Global Employment Migration Policy Dashboard</h1>
+    <p>
+      Interactive dashboard for exploring employment-based migration flows
+      between countries from 2015–2019.
+    </p>
+  </header>
+
+  <section class="controls">
+    <div class="control-group">
+      <label for="yearSelect">Year</label>
+      <select id="yearSelect">
+        <option value="2015">2015</option>
+        <option value="2016">2016</option>
+        <option value="2017">2017</option>
+        <option value="2018">2018</option>
+        <option value="2019" selected>2019</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label for="countrySelect">Country</label>
+      <select id="countrySelect">
+        <option value="all">All Countries</option>
+      </select>
+    </div>
+
+    <div class="control-group checkbox-group">
+      <label>
+        <input type="checkbox" id="positiveOnly" />
+        Show positive flows only
+      </label>
+    </div>
+  </section>
+
+  <main class="dashboard-grid">
+    <section class="panel panel-heatmap">
+      <div class="panel-header">
+        <h2>Income-Level Migration Heatmap</h2>
+        <p>Net migration flow between origin and destination income groups. Click a cell to filter the entire dashboard to that income pair.</p>
+      </div>
+      <div class="heatmap-bar">
+        <span class="heatmap-selection-label" id="heatmapSelectionLabel"></span>
+      </div>
+      <svg id="heatmapView"></svg>
+    </section>
+
+    <section class="panel panel-large">
+      <div class="panel-header">
+        <h2>Geographic Flow Detail</h2>
+        <p>Showing the strongest flows for the current selection. Use the heatmap or filters above to drill down.</p>
+      </div>
+      <div class="map-controls-bar">
+        <label class="map-topn-label">
+          Top flows shown: <strong id="mapTopNValue">20</strong>
+          <input type="range" id="mapTopNSlider" min="5" max="60" step="5" value="20" />
+        </label>
+        <span class="map-status" id="mapStatusLabel"></span>
+      </div>
+      <svg id="mapView"></svg>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Top Destination Countries</h2>
+        <p>Highest inbound migration values for the selected filters.</p>
+      </div>
+      <svg id="barView"></svg>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Yearly Trend</h2>
+        <p>Total migration flow over time for current selection.</p>
+      </div>
+      <svg id="lineView"></svg>
+    </section>
+    <section class="panel panel-chord">
+      <div class="panel-header">
+        <h2>Regional Migration Chord Diagram</h2>
+        <p>Migration flows between World Bank regions. Arc width shows flow magnitude.</p>
+      </div>
+      <svg id="chordView"></svg>
+    </section>
+  </main>
+
+  <div id="tooltip" class="tooltip hidden"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
