@@ -227,8 +227,17 @@ function setupControls() {
   });
 
   d3.select("#mapTopNSlider").on("input", function() {
-    state.mapTopN = +this.value;
-    d3.select("#mapTopNValue").text(this.value);
+    const v = +this.value;
+    state.mapTopN = v;
+    document.getElementById("mapTopNInput").value = v;
+    if (state.filteredData) mapView.update(state.filteredData);
+  });
+
+  d3.select("#mapTopNInput").on("change", function() {
+    const v = Math.max(1, +this.value || 1);
+    this.value = v;
+    state.mapTopN = v;
+    document.getElementById("mapTopNSlider").value = v;
     if (state.filteredData) mapView.update(state.filteredData);
   });
 }

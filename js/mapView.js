@@ -99,14 +99,31 @@ export function createMapView(svgSelector, state, tooltip, onCountryClick) {
       ? data.filter(d => d.base_country_name === sel || d.target_country_name === sel)
       : data;
 
-    pool = pool
+    // Sort by strength, remove zeros
+    const sorted = pool
       .map(d => ({ d, abs: Math.abs(getFlowValue(d, year)) }))
       .filter(o => o.abs > 0)
-      .sort((a, b) => b.abs - a.abs)
-      .slice(0, topN)
-      .map(o => o.d);
+      .sort((a, b) => b.abs - a.abs);
 
-    return pool;
+    const totalAvailable = sorted.length;
+
+    // Update slider max and number input to match available flows
+    const slider = document.getElementById("mapTopNSlider");
+    const numInput = document.getElementById("mapTopNInput");
+    const label = document.getElementById("mapTopNValue");
+    if (slider) {
+      const roundedMax = Math.ceil(totalAvailable / 5) * 5;
+      slider.max = Math.max(roundedMax, 5);
+      if (+slider.value > totalAvailable) {
+        slider.value = roundedMax;
+        state.mapTopN = roundedMax;
+      }
+      if (numInput) numInput.max = totalAvailable;
+      const showing = Math.min(topN, totalAvailable);
+      if (label) label.textContent = `${showing} / ${totalAvailable}`;
+    }
+
+    return sorted.slice(0, topN).map(o => o.d);
   }
 
   // ─── Update (data-only; layout is stable) ────────────────────

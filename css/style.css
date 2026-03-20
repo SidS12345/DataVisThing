@@ -161,6 +161,15 @@ svg {
   accent-color: var(--accent);
 }
 
+.map-topn-label input[type="number"] {
+  width: 72px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
 .map-status {
   font-size: 0.82rem;
   color: var(--muted);
