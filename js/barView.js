@@ -1,33 +1,36 @@
 import { groupTopDestinations } from "./utils.js";
 
 export function createBarView(svgSelector, state, tooltip) {
-  const svg = d3.select(svgSelector);
-  const margin = { top: 20, right: 20, bottom: 40, left: 140 };
+  const svg = d3.select(svgSelector)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+  const margin = { top: 20, right: 20, bottom: 44, left: 140 };
   const g = svg.append("g");
 
-  function resize() {
-    const bounds = svg.node().getBoundingClientRect();
-    svg.attr("viewBox", `0 0 ${bounds.width} ${bounds.height}`);
+  let cachedW = 0, cachedH = 0;
+
+  function ensureLayout() {
+    if (cachedW) return;
+    const parent = svg.node().parentNode;
+    cachedW = (parent.clientWidth - 32) || 400;
+    cachedH = svg.node().getBoundingClientRect().height || 400;
+    svg.attr("viewBox", `0 0 ${cachedW} ${cachedH}`);
   }
 
+  window.addEventListener("resize", () => { cachedW = 0; cachedH = 0; });
+
   function showTooltip(event, html) {
-    tooltip
-      .classed("hidden", false)
-      .html(html)
+    tooltip.classed("hidden", false).html(html)
       .style("left", `${event.pageX + 12}px`)
       .style("top", `${event.pageY + 12}px`);
   }
 
-  function hideTooltip() {
-    tooltip.classed("hidden", true);
-  }
+  function hideTooltip() { tooltip.classed("hidden", true); }
 
   function update(data) {
-    resize();
+    ensureLayout();
 
-    const { width, height } = svg.node().getBoundingClientRect();
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
+    const innerWidth = cachedW - margin.left - margin.right;
+    const innerHeight = cachedH - margin.top - margin.bottom;
 
     g.attr("transform", `translate(${margin.left},${margin.top})`);
     g.selectAll("*").remove();
@@ -44,8 +47,7 @@ export function createBarView(svgSelector, state, tooltip) {
       .range([0, innerHeight])
       .padding(0.15);
 
-    g.append("g")
-      .call(d3.axisLeft(y));
+    g.append("g").call(d3.axisLeft(y));
 
     g.append("g")
       .attr("transform", `translate(0,${innerHeight})`)
@@ -61,15 +63,10 @@ export function createBarView(svgSelector, state, tooltip) {
       .attr("height", y.bandwidth())
       .on("mouseover", function(event, d) {
         d3.select(this).classed("active", true);
-        showTooltip(event, `
-          <strong>${d.country}</strong><br/>
-          Total: ${d.total.toFixed(2)}
-        `);
+        showTooltip(event, `<strong>${d.country}</strong><br/>Total: ${d.total.toFixed(2)}`);
       })
       .on("mousemove", function(event) {
-        tooltip
-          .style("left", `${event.pageX + 12}px`)
-          .style("top", `${event.pageY + 12}px`);
+        tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
       })
       .on("mouseout", function() {
         d3.select(this).classed("active", false);
@@ -79,12 +76,10 @@ export function createBarView(svgSelector, state, tooltip) {
     g.append("text")
       .attr("class", "axis-label")
       .attr("x", innerWidth / 2)
-      .attr("y", innerHeight + 34)
+      .attr("y", innerHeight + 36)
       .attr("text-anchor", "middle")
       .text("Total migration flow");
   }
-
-  window.addEventListener("resize", resize);
 
   return { update };
 }

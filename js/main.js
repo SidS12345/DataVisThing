@@ -2,7 +2,6 @@ import { state } from "./state.js";
 import { filterData } from "./utils.js";
 import { createMapView } from "./mapView.js";
 import { createBarView } from "./barView.js";
-import { createLineView } from "./lineView.js";
 import { createChordView } from "./chordView.js";
 import { createHeatmapView } from "./heatmapView.js";
 
@@ -44,7 +43,6 @@ function updateSelectionLabel() {
 const heatmapView = createHeatmapView("#heatmapView", state, tooltip, onHeatmapCellClick);
 const mapView = createMapView("#mapView", state, tooltip, onCountryClick);
 const barView = createBarView("#barView", state, tooltip);
-const lineView = createLineView("#lineView", state, tooltip);
 const chordView = createChordView("#chordView", state, tooltip);
 
 // Zooming/panning with inertia (smooth glide) and horizontal wrapping.
@@ -206,7 +204,7 @@ function render() {
   heatmapView.update(state.filteredData);
   mapView.update(state.filteredData);
   barView.update(state.filteredData);
-  lineView.update(state.filteredData);
+
   chordView.update(state.filteredData);
 }
 

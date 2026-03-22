@@ -72,6 +72,7 @@ body {
   grid-template-rows: auto auto;
   gap: 20px;
   padding: 0 32px 32px;
+  align-items: stretch;
 }
 
 .panel {
@@ -80,10 +81,17 @@ body {
   border-radius: 14px;
   box-shadow: var(--shadow);
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel svg {
+  flex: 1;
+  min-height: 0;
 }
 
 .panel-large {
-  grid-row: span 2;
+  grid-row: auto;
 }
 
 .panel-heatmap {
@@ -178,7 +186,6 @@ svg {
 }
 
 #mapView {
-  min-height: 700px;
   background: #aad3df;
   border-radius: 10px;
   cursor: grab;
@@ -188,9 +195,8 @@ svg {
   cursor: grabbing;
 }
 
-#barView,
-#lineView {
-  min-height: 320px;
+#barView {
+  min-height: 0;
 }
 
 .axis-label {
@@ -325,6 +331,6 @@ svg {
   }
 
   #mapView {
-    min-height: 500px;
+    min-height: auto;
   }
 }

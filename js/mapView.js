@@ -2,7 +2,7 @@ import { getFlowValue } from "./utils.js";
 
 export function createMapView(svgSelector, state, tooltip, onCountryClick) {
   const svg = d3.select(svgSelector)
-    .attr("preserveAspectRatio", "xMidYMin meet");
+    .attr("preserveAspectRatio", "xMidYMid meet");
   const bgGroup = svg.append("g").attr("class", "bg-layer");
   const g = svg.append("g").attr("class", "map-layer");
 
@@ -28,10 +28,14 @@ export function createMapView(svgSelector, state, tooltip, onCountryClick) {
     })
     .catch(err => console.error("Failed to load world GeoJSON:", err));
 
+  // Full north, cut off below Antarctica (~58°S keeps Patagonia/NZ)
+  const clippedBounds = {
+    type: "Polygon",
+    coordinates: [[[-180, 84], [180, 84], [180, -58], [-180, -58], [-180, 84]]]
+  };
+
   function makeProjection(w, h) {
-    return d3.geoMercator()
-      .scale(w / (2 * Math.PI))
-      .translate([w / 2, h / 2]);
+    return d3.geoMercator().fitSize([w, h], clippedBounds);
   }
 
   function proj(projection, lon, lat) {
@@ -50,26 +54,26 @@ export function createMapView(svgSelector, state, tooltip, onCountryClick) {
   // rather than the SVG itself, whose dimensions become unreliable after
   // a viewBox is set (SVG gains an intrinsic aspect ratio that shifts
   // getBoundingClientRect results on subsequent reads).
-  function measureContainer() {
-    const svgNode = svg.node();
-    // parentNode is the .panel <section> — a normal HTML element
-    const parent = svgNode.parentNode;
-    // Use offsetWidth/offsetHeight which are layout-stable on HTML elements
-    const w = parent.clientWidth - 32 || 800;  // subtract panel padding (16px each side)
-    // For height, use the SVG's CSS-resolved height (min-height) before viewBox interferes
-    const h = Math.max(svgNode.getBoundingClientRect().height, 600);
-    return { w, h };
-  }
-
   // Recompute projection/viewBox only if the cache is empty (first call or after resize).
   function ensureLayout() {
     if (cachedProjection) return cachedProjection;
 
-    const { w, h } = measureContainer();
+    const parent = svg.node().parentNode;
+    const w = (parent.clientWidth - 32) || 800;
+
+    // Compute the natural height from the projection's aspect ratio:
+    // fitSize with a square gives us the scale, then we derive the
+    // actual vertical extent the clipped bounds occupy.
+    const tempProj = d3.geoMercator().fitWidth(w, clippedBounds);
+    const topLeft = tempProj([-180, 84]);
+    const bottomRight = tempProj([180, -58]);
+    const h = Math.ceil(bottomRight[1] - topLeft[1]);
+
     cachedW = w;
     cachedH = h;
     svg.attr("viewBox", `0 0 ${w} ${h}`);
-    cachedProjection = makeProjection(w, h);
+    svg.style("height", `${h}px`);
+    cachedProjection = d3.geoMercator().fitSize([w, h], clippedBounds);
     return cachedProjection;
   }
 
@@ -91,6 +95,8 @@ export function createMapView(svgSelector, state, tooltip, onCountryClick) {
   }
 
   // ─── Filtering pipeline ──────────────────────────────────────
+  let lastTotalAvailable = 0;
+
   function prepareMapFlows(data, year) {
     const sel = state.selectedMapCountry;
     const topN = state.mapTopN || 20;
@@ -99,28 +105,33 @@ export function createMapView(svgSelector, state, tooltip, onCountryClick) {
       ? data.filter(d => d.base_country_name === sel || d.target_country_name === sel)
       : data;
 
-    // Sort by strength, remove zeros
     const sorted = pool
       .map(d => ({ d, abs: Math.abs(getFlowValue(d, year)) }))
       .filter(o => o.abs > 0)
       .sort((a, b) => b.abs - a.abs);
 
     const totalAvailable = sorted.length;
+    const showing = Math.min(topN, totalAvailable);
 
-    // Update slider max and number input to match available flows
-    const slider = document.getElementById("mapTopNSlider");
-    const numInput = document.getElementById("mapTopNInput");
+    // Update label always
     const label = document.getElementById("mapTopNValue");
-    if (slider) {
-      const roundedMax = Math.ceil(totalAvailable / 5) * 5;
-      slider.max = Math.max(roundedMax, 5);
-      if (+slider.value > totalAvailable) {
-        slider.value = roundedMax;
-        state.mapTopN = roundedMax;
+    if (label) label.textContent = `${showing} / ${totalAvailable}`;
+
+    // Only update slider max when the total pool size changes (filter change),
+    // NOT on every slider drag — changing max mid-drag causes the thumb to jump.
+    if (totalAvailable !== lastTotalAvailable) {
+      lastTotalAvailable = totalAvailable;
+      const slider = document.getElementById("mapTopNSlider");
+      const numInput = document.getElementById("mapTopNInput");
+      if (slider) {
+        const roundedMax = Math.ceil(totalAvailable / 5) * 5;
+        slider.max = Math.max(roundedMax, 5);
+        if (+slider.value > totalAvailable) {
+          slider.value = roundedMax;
+          state.mapTopN = roundedMax;
+        }
       }
       if (numInput) numInput.max = totalAvailable;
-      const showing = Math.min(topN, totalAvailable);
-      if (label) label.textContent = `${showing} / ${totalAvailable}`;
     }
 
     return sorted.slice(0, topN).map(o => o.d);
