@@ -25,7 +25,7 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
     if (cachedLayout) return cachedLayout;
 
     const parent = svg.node().parentNode;
-    const width = (parent.clientWidth - 32) || 600;   // subtract panel padding
+    const width = (parent.clientWidth - 32) || 600;
     const height = Math.max(svg.node().getBoundingClientRect().height, 380);
     svg.attr("viewBox", `0 0 ${width} ${height}`);
 
@@ -101,7 +101,7 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
     const sel = state.selectedIncomeCell;
 
     // --- Cells ---
-    rootG.selectAll("rect.hm-cell")
+    const cellSel = rootG.selectAll("rect.hm-cell")
       .data(cells, d => `${d.row}-${d.col}`)
       .join("rect")
       .attr("class", "hm-cell")
@@ -110,6 +110,40 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
       .attr("width", cellW - 2)
       .attr("height", cellH - 2)
       .attr("rx", 4)
+      .style("cursor", "pointer")
+      .on("mouseover", function(event, d) {
+        if (!(sel && sel.origin === d.origin && sel.dest === d.dest)) {
+          d3.select(this).transition("hover").duration(150)
+            .attr("stroke", "#1f2937").attr("stroke-width", 2);
+        }
+        const pct = totalFlow !== 0 ? ((d.value / totalFlow) * 100).toFixed(1) : "0.0";
+        showTooltip(event, `
+          <strong>${INCOME_SHORT[d.origin]} \u2192 ${INCOME_SHORT[d.dest]}</strong><br/>
+          Net flow: ${d3.format("+.2f")(d.value)} per 10K<br/>
+          Share of total: ${pct}%
+        `);
+        state.hover = { type: "incomeCell", origin: d.origin, dest: d.dest };
+        if (state.onHighlight) state.onHighlight();
+      })
+      .on("mousemove", function(event) {
+        tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
+      })
+      .on("mouseout", function(event, d) {
+        const isSelected = sel && sel.origin === d.origin && sel.dest === d.dest;
+        d3.select(this).transition("hover").duration(150)
+          .attr("stroke", isSelected ? "#1f2937" : "none")
+          .attr("stroke-width", isSelected ? 3 : 0);
+        hideTooltip();
+        state.hover = null;
+        if (state.onHighlight) state.onHighlight();
+      })
+      .on("click", function(event, d) {
+        if (onCellClick) onCellClick(d.origin, d.dest);
+      });
+
+    // Animate fill, stroke, opacity on selection change (named transition
+    // so it doesn't collide with the "hover" transition above)
+    cellSel.transition("select").duration(350)
       .attr("fill", d => colorScale(d.value))
       .attr("stroke", d =>
         sel && sel.origin === d.origin && sel.dest === d.dest ? "#1f2937" : "none"
@@ -120,33 +154,10 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
       .style("opacity", d => {
         if (!sel) return 1;
         return (sel.origin === d.origin && sel.dest === d.dest) ? 1 : 0.35;
-      })
-      .style("cursor", "pointer")
-      .on("mouseover", function(event, d) {
-        d3.select(this).attr("stroke", "#1f2937").attr("stroke-width", 2);
-        const pct = totalFlow !== 0 ? ((d.value / totalFlow) * 100).toFixed(1) : "0.0";
-        showTooltip(event, `
-          <strong>${INCOME_SHORT[d.origin]} \u2192 ${INCOME_SHORT[d.dest]}</strong><br/>
-          Net flow: ${d.value.toFixed(2)} per 10K<br/>
-          Share of total: ${pct}%
-        `);
-      })
-      .on("mousemove", function(event) {
-        tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
-      })
-      .on("mouseout", function(event, d) {
-        const isSelected = sel && sel.origin === d.origin && sel.dest === d.dest;
-        d3.select(this)
-          .attr("stroke", isSelected ? "#1f2937" : "none")
-          .attr("stroke-width", isSelected ? 3 : 0);
-        hideTooltip();
-      })
-      .on("click", function(event, d) {
-        if (onCellClick) onCellClick(d.origin, d.dest);
       });
 
     // --- Cell value labels ---
-    rootG.selectAll("text.hm-value")
+    const valueSel = rootG.selectAll("text.hm-value")
       .data(cells, d => `${d.row}-${d.col}`)
       .join("text")
       .attr("class", "hm-value")
@@ -158,9 +169,15 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
       .attr("font-weight", 600)
       .attr("fill", d => Math.abs(d.value) > absMax * 0.6 ? "#fff" : "#1f2937")
       .style("pointer-events", "none")
-      .text(d => d.value.toFixed(1));
+      .text(d => d3.format("+.1f")(d.value));
 
-    // --- Axis labels (static structure, always 4 items — join handles idempotently) ---
+    valueSel.transition("select").duration(350)
+      .style("opacity", d => {
+        if (!sel) return 1;
+        return (sel.origin === d.origin && sel.dest === d.dest) ? 1 : 0.35;
+      });
+
+    // --- Axis labels ---
     rootG.selectAll("text.hm-y-label")
       .data(INCOME_ORDER)
       .join("text")
@@ -213,7 +230,6 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
     const legendW = 16;
     const legendX = gridW + 24;
 
-    // Gradient (update stops in-place)
     const gradId = "hm-legend-grad";
     let grad = defs.select(`#${gradId}`);
     if (grad.empty()) {
@@ -232,7 +248,6 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
       .attr("offset", d => d.offset)
       .attr("stop-color", d => d.color);
 
-    // Legend group
     const legendG = rootG.selectAll("g.hm-legend").data([null]).join("g")
       .attr("class", "hm-legend")
       .attr("transform", `translate(${legendX}, 0)`);
@@ -254,15 +269,71 @@ export function createHeatmapView(svgSelector, state, tooltip, onCellClick) {
     axisG.select(".domain").remove();
     axisG.selectAll(".tick text").attr("font-size", "10px");
 
-    legendG.selectAll("text.hm-legend-title").data(["per 10K"]).join("text")
+    legendG.selectAll("text.hm-legend-title").data(["Net flow"]).join("text")
       .attr("class", "hm-legend-title")
       .attr("x", legendW / 2)
-      .attr("y", -6)
+      .attr("y", -16)
       .attr("text-anchor", "middle")
       .attr("font-size", "10px")
+      .attr("font-weight", 600)
       .attr("fill", "#6b7280")
+      .text(d => d);
+
+    legendG.selectAll("text.hm-legend-unit").data(["(per 10K)"]).join("text")
+      .attr("class", "hm-legend-unit")
+      .attr("x", legendW / 2)
+      .attr("y", -4)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "9px")
+      .attr("fill", "#9ca3af")
+      .text(d => d);
+
+    legendG.selectAll("text.hm-legend-inflow").data(["Inflow (+)"]).join("text")
+      .attr("class", "hm-legend-inflow")
+      .attr("x", legendW / 2)
+      .attr("y", gridH + 16)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "9px")
+      .attr("font-weight", 600)
+      .attr("fill", "#2563eb")
+      .text(d => d);
+
+    legendG.selectAll("text.hm-legend-outflow").data(["Outflow (\u2212)"]).join("text")
+      .attr("class", "hm-legend-outflow")
+      .attr("x", legendW / 2)
+      .attr("y", gridH + 28)
+      .attr("text-anchor", "middle")
+      .attr("font-size", "9px")
+      .attr("font-weight", 600)
+      .attr("fill", "#ef4444")
       .text(d => d);
   }
 
-  return { update };
+  // ─── Cross-view highlight ──────────────────────────────────────
+  // Uses CSS filter (not opacity) to avoid conflicting with the
+  // selection-based opacity already applied to cells.
+  function highlight() {
+    const h = state.hover;
+    const sel = state.selectedIncomeCell;
+
+    rootG.selectAll("rect.hm-cell")
+      .transition("highlight").duration(150)
+      .style("filter", d => {
+        // Don't cross-highlight for our own hover type
+        if (!h || h.type === "incomeCell") return null;
+
+        // Never dim the selected cell
+        if (sel && sel.origin === d.origin && sel.dest === d.dest) return null;
+
+        let match = false;
+        if (h.type === "country") {
+          match = d.origin === h.income || d.dest === h.income;
+        } else if (h.type === "flow") {
+          match = d.origin === h.baseIncome && d.dest === h.targetIncome;
+        }
+        return match ? null : "brightness(0.5) saturate(0.3)";
+      });
+  }
+
+  return { update, highlight };
 }

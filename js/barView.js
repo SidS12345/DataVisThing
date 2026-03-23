@@ -7,6 +7,7 @@ export function createBarView(svgSelector, state, tooltip) {
   const g = svg.append("g");
 
   let cachedW = 0, cachedH = 0;
+  let lastIncomeMap = new Map();
 
   function ensureLayout() {
     if (cachedW) return;
@@ -37,6 +38,14 @@ export function createBarView(svgSelector, state, tooltip) {
 
     const chartData = groupTopDestinations(data, state.selectedYear, 10);
 
+    // Build country → income lookup for cross-view highlighting
+    const incomeMap = new Map();
+    data.forEach(d => {
+      if (!incomeMap.has(d.base_country_name)) incomeMap.set(d.base_country_name, d.base_country_wb_income);
+      if (!incomeMap.has(d.target_country_name)) incomeMap.set(d.target_country_name, d.target_country_wb_income);
+    });
+    lastIncomeMap = incomeMap;
+
     const x = d3.scaleLinear()
       .domain([0, d3.max(chartData, d => d.total) || 1])
       .nice()
@@ -53,17 +62,19 @@ export function createBarView(svgSelector, state, tooltip) {
       .attr("transform", `translate(0,${innerHeight})`)
       .call(d3.axisBottom(x).ticks(5));
 
-    g.selectAll(".bar")
+    const bars = g.selectAll(".bar")
       .data(chartData, d => d.country)
       .join("rect")
       .attr("class", "bar")
       .attr("x", 0)
       .attr("y", d => y(d.country))
-      .attr("width", d => x(d.total))
+      .attr("width", 0)
       .attr("height", y.bandwidth())
       .on("mouseover", function(event, d) {
         d3.select(this).classed("active", true);
         showTooltip(event, `<strong>${d.country}</strong><br/>Total: ${d.total.toFixed(2)} per 10K`);
+        state.hover = { type: "country", name: d.country, income: lastIncomeMap.get(d.country) };
+        if (state.onHighlight) state.onHighlight();
       })
       .on("mousemove", function(event) {
         tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
@@ -71,7 +82,13 @@ export function createBarView(svgSelector, state, tooltip) {
       .on("mouseout", function() {
         d3.select(this).classed("active", false);
         hideTooltip();
+        state.hover = null;
+        if (state.onHighlight) state.onHighlight();
       });
+
+    bars.transition().duration(400)
+      .delay((_d, i) => i * 30)
+      .attr("width", d => x(d.total));
 
     g.append("text")
       .attr("class", "axis-label")
@@ -81,5 +98,17 @@ export function createBarView(svgSelector, state, tooltip) {
       .text("Total migration flow (per 10K)");
   }
 
-  return { update };
+  function highlight() {
+    const h = state.hover;
+    g.selectAll(".bar")
+      .transition("highlight").duration(150)
+      .style("opacity", d => {
+        if (!h) return 1;
+        if (h.type === "country") return d.country === h.name ? 1 : 0.15;
+        if (h.type === "flow") return d.country === h.target ? 1 : 0.15;
+        return 1;
+      });
+  }
+
+  return { update, highlight };
 }

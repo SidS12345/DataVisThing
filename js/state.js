@@ -8,5 +8,7 @@ export const state = {
   selectedTarget: null,
   selectedMapCountry: null,
   selectedIncomeCell: null,  // { origin: "Low Income", dest: "High Income" } or null
-  mapTopN: 20               // max flow lines to show on the map
+  mapTopN: 20,              // max flow lines to show on the map
+  hover: null,              // cross-view hover state: { type, ... } or null
+  onHighlight: null          // callback wired by main.js to broadcast highlights
 };

@@ -3,7 +3,9 @@ import { filterData } from "./utils.js";
 import { createMapView } from "./mapView.js";
 import { createBarView } from "./barView.js";
 // import { createChordView } from "./chordView.js";
+import { createLineView } from "./lineView.js";
 import { createHeatmapView } from "./heatmapView.js";
+import { updateInsights } from "./insightsView.js";
 
 const tooltip = d3.select("#tooltip");
 
@@ -26,6 +28,7 @@ function onHeatmapCellClick(origin, dest) {
 
 function updateSelectionLabel() {
   const label = d3.select("#heatmapSelectionLabel");
+  const btn = d3.select("#heatmapClearBtn");
   const sel = state.selectedIncomeCell;
   if (sel) {
     const short = {
@@ -34,9 +37,11 @@ function updateSelectionLabel() {
       "Upper Middle Income": "Upper middle",
       "High Income": "High"
     };
-    label.text(`Filtering: ${short[sel.origin]} \u2192 ${short[sel.dest]}  (click cell again to clear)`);
+    label.text(`Filtering dashboard: ${short[sel.origin]} \u2192 ${short[sel.dest]}`);
+    btn.classed("hidden", false);
   } else {
     label.text("");
+    btn.classed("hidden", true);
   }
 }
 
@@ -44,6 +49,15 @@ const heatmapView = createHeatmapView("#heatmapView", state, tooltip, onHeatmapC
 const mapView = createMapView("#mapView", state, tooltip, onCountryClick);
 const barView = createBarView("#barView", state, tooltip);
 // const chordView = createChordView("#chordView", state, tooltip);
+const lineView = createLineView("#lineView", state, tooltip);
+
+// Cross-view hover highlighting: when any view sets state.hover,
+// this callback applies highlight() on every view that supports it.
+state.onHighlight = function() {
+  heatmapView.highlight();
+  mapView.highlight();
+  barView.highlight();
+};
 
 // Zooming/panning with inertia (smooth glide) and horizontal wrapping.
 function enableZoom(containerSelector) {
@@ -180,6 +194,99 @@ function enableZoom(containerSelector) {
 
 enableZoom("#mapView");
 
+d3.select("#heatmapClearBtn").on("click", function() {
+  state.selectedIncomeCell = null;
+  updateSelectionLabel();
+  render();
+});
+
+// ─── Active filter summary + Reset all ──────────────────────────
+const INCOME_SHORT_CTRL = {
+  "Low Income": "Low",
+  "Lower Middle Income": "Lower middle",
+  "Upper Middle Income": "Upper middle",
+  "High Income": "High"
+};
+
+function updateActiveFilters() {
+  // Keep year buttons in sync with state
+  d3.selectAll(".year-btn").classed("active", function() {
+    return +this.dataset.year === state.selectedYear;
+  });
+
+  const container = d3.select("#activeFilters");
+  if (container.empty()) return;
+
+  const pills = [];
+  if (state.selectedCountry !== "all") {
+    pills.push({ label: state.selectedCountry, key: "country" });
+  }
+  if (state.selectedIncomeCell) {
+    const s = state.selectedIncomeCell;
+    pills.push({
+      label: `${INCOME_SHORT_CTRL[s.origin]} \u2192 ${INCOME_SHORT_CTRL[s.dest]}`,
+      key: "income"
+    });
+  }
+  if (state.positiveOnly) {
+    pills.push({ label: "Positive only", key: "positive" });
+  }
+
+  d3.select("#resetAllBtn").classed("hidden",
+    pills.length === 0 && state.selectedYear === 2019
+  );
+
+  // Summary always shows the year; pills show non-default filters
+  container.selectAll(".active-filters-summary").data([null]).join("span")
+    .attr("class", "active-filters-summary")
+    .text(pills.length === 0
+      ? `Viewing: ${state.selectedYear}, all data`
+      : `Viewing: ${state.selectedYear}`);
+
+  const pillSel = container.selectAll(".filter-pill")
+    .data(pills, d => d.key)
+    .join(
+      enter => {
+        const span = enter.append("span").attr("class", "filter-pill");
+        span.append("span").attr("class", "pill-text");
+        span.append("button").attr("class", "pill-close").html("&times;");
+        return span;
+      },
+      update => update,
+      exit => exit.remove()
+    );
+
+  pillSel.select(".pill-text").text(d => d.label);
+  pillSel.select(".pill-close").on("click", function(event, d) {
+    event.stopPropagation();
+    if (d.key === "country") {
+      state.selectedCountry = "all";
+      document.getElementById("countrySelect").value = "all";
+    } else if (d.key === "income") {
+      state.selectedIncomeCell = null;
+      updateSelectionLabel();
+    } else if (d.key === "positive") {
+      state.positiveOnly = false;
+      document.getElementById("positiveOnly").checked = false;
+    }
+    render();
+  });
+}
+
+function resetAll() {
+  state.selectedYear = 2019;
+  state.selectedCountry = "all";
+  state.selectedIncomeCell = null;
+  state.positiveOnly = false;
+  state.selectedMapCountry = null;
+
+  document.getElementById("countrySelect").value = "all";
+  document.getElementById("positiveOnly").checked = false;
+
+  updateSelectionLabel();
+  render();
+}
+
 function populateCountryDropdown(data) {
   const countries = new Set();
 
@@ -204,13 +311,18 @@ function render() {
   heatmapView.update(state.filteredData);
   mapView.update(state.filteredData);
   barView.update(state.filteredData);
+  updateInsights(state.filteredData, state);
 
   // chordView.update(state.filteredData);
+  // Line view always receives rawData so it can show all years regardless
+  // of the selectedYear used to filter the rest of the dashboard.
+  lineView.update(state.rawData);
+  updateActiveFilters();
 }
 
 function setupControls() {
-  d3.select("#yearSelect").on("change", function() {
-    state.selectedYear = +this.value;
+  d3.selectAll(".year-btn").on("click", function() {
+    state.selectedYear = +this.dataset.year;
     render();
   });
 
@@ -223,6 +335,8 @@ function setupControls() {
     state.positiveOnly = this.checked;
     render();
   });
+
+  d3.select("#resetAllBtn").on("click", resetAll);
 
   d3.select("#mapTopNSlider").on("input", function() {
     const v = +this.value;

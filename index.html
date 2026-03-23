@@ -16,41 +16,54 @@
     </p>
   </header>
 
-  <section class="controls">
-    <div class="control-group">
-      <label for="yearSelect">Year</label>
-      <select id="yearSelect">
-        <option value="2015">2015</option>
-        <option value="2016">2016</option>
-        <option value="2017">2017</option>
-        <option value="2018">2018</option>
-        <option value="2019" selected>2019</option>
-      </select>
+  <section class="controls-panel">
+    <div class="controls-header">
+      <span class="controls-title">Filters</span>
+      <button class="reset-all-btn hidden" id="resetAllBtn">Reset all</button>
     </div>
+    <div class="controls-row">
+      <div class="control-group">
+        <span class="control-label">Year</span>
+        <div class="year-buttons">
+          <button class="year-btn" data-year="2015">2015</button>
+          <button class="year-btn" data-year="2016">2016</button>
+          <button class="year-btn" data-year="2017">2017</button>
+          <button class="year-btn" data-year="2018">2018</button>
+          <button class="year-btn active" data-year="2019">2019</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <label class="control-label" for="countrySelect">Country</label>
+        <select id="countrySelect">
+          <option value="all">All Countries</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label class="toggle-label">
+          <input type="checkbox" id="positiveOnly" />
+          <span>Positive flows only</span>
+        </label>
+      </div>
+    </div>
+    <div class="active-filters" id="activeFilters"></div>
+  </section>
 
-    <div class="control-group">
-      <label for="countrySelect">Country</label>
-      <select id="countrySelect">
-        <option value="all">All Countries</option>
-      </select>
-    </div>
-
-    <div class="control-group checkbox-group">
-      <label>
-        <input type="checkbox" id="positiveOnly" />
-        Show positive flows only
-      </label>
-    </div>
+  <section class="insights-bar">
+    <div class="insights-header">Key Insights</div>
+    <ul id="insightsList">
+      <li class="insight-item">Loading data...</li>
+    </ul>
   </section>
 
   <main class="dashboard-grid">
     <section class="panel panel-heatmap">
       <div class="panel-header">
         <h2>Income-Level Migration Heatmap</h2>
-        <p>Net migration flow (per 10,000 population) between origin and destination income groups. Click a cell to filter the entire dashboard to that income pair.</p>
+        <p>Net migration flow (per 10,000 population) between origin and destination income groups. Blue = net inflow, red = net outflow. Click a cell to filter the entire dashboard.</p>
       </div>
       <div class="heatmap-bar">
         <span class="heatmap-selection-label" id="heatmapSelectionLabel"></span>
+        <button class="heatmap-clear-btn hidden" id="heatmapClearBtn">Clear selection</button>
       </div>
       <svg id="heatmapView"></svg>
     </section>
@@ -58,7 +71,7 @@
     <section class="panel panel-large">
       <div class="panel-header">
         <h2>Geographic Flow Detail</h2>
-        <p>Showing the strongest flows for the current selection. Use the heatmap or filters above to drill down.</p>
+        <p>Strongest flows for the current selection. Blue arcs = inflow, red arcs = outflow. Use the heatmap or country filter to drill down.</p>
       </div>
       <div class="map-controls-bar">
         <label class="map-topn-label">
@@ -77,6 +90,14 @@
         <p>Highest inbound migration values (per 10,000 population) for the selected filters.</p>
       </div>
       <svg id="barView"></svg>
+    </section>
+
+    <section class="panel panel-line">
+      <div class="panel-header">
+        <h2>Migration Trends Over Time (2015–2019)</h2>
+        <p id="lineViewContext">Showing: aggregate across all country pairs</p>
+      </div>
+      <svg id="lineView"></svg>
     </section>
 
     <!-- Chord diagram temporarily disabled
