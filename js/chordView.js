@@ -104,7 +104,8 @@ export function createChordView(svgSelector, state, tooltip) {
           .style("opacity", r =>
             r.source.index === d.index || r.target.index === d.index ? 0.85 : 0.08
           );
-        showTooltip(event, `<strong>${regions[d.index]}</strong>`);
+        const total = chords.groups[d.index].value.toFixed(2);
+        showTooltip(event, `<strong>${regions[d.index]}</strong><br/>Total: ${total} per 10K`);
       })
       .on("mousemove", function(event) {
         tooltip

@@ -63,7 +63,7 @@ export function createBarView(svgSelector, state, tooltip) {
       .attr("height", y.bandwidth())
       .on("mouseover", function(event, d) {
         d3.select(this).classed("active", true);
-        showTooltip(event, `<strong>${d.country}</strong><br/>Total: ${d.total.toFixed(2)}`);
+        showTooltip(event, `<strong>${d.country}</strong><br/>Total: ${d.total.toFixed(2)} per 10K`);
       })
       .on("mousemove", function(event) {
         tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
@@ -78,7 +78,7 @@ export function createBarView(svgSelector, state, tooltip) {
       .attr("x", innerWidth / 2)
       .attr("y", innerHeight + 36)
       .attr("text-anchor", "middle")
-      .text("Total migration flow");
+      .text("Total migration flow (per 10K)");
   }
 
   return { update };

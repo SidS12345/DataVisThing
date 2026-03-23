@@ -2,7 +2,7 @@ import { state } from "./state.js";
 import { filterData } from "./utils.js";
 import { createMapView } from "./mapView.js";
 import { createBarView } from "./barView.js";
-import { createChordView } from "./chordView.js";
+// import { createChordView } from "./chordView.js";
 import { createHeatmapView } from "./heatmapView.js";
 
 const tooltip = d3.select("#tooltip");
@@ -43,7 +43,7 @@ function updateSelectionLabel() {
 const heatmapView = createHeatmapView("#heatmapView", state, tooltip, onHeatmapCellClick);
 const mapView = createMapView("#mapView", state, tooltip, onCountryClick);
 const barView = createBarView("#barView", state, tooltip);
-const chordView = createChordView("#chordView", state, tooltip);
+// const chordView = createChordView("#chordView", state, tooltip);
 
 // Zooming/panning with inertia (smooth glide) and horizontal wrapping.
 function enableZoom(containerSelector) {
@@ -205,7 +205,7 @@ function render() {
   mapView.update(state.filteredData);
   barView.update(state.filteredData);
 
-  chordView.update(state.filteredData);
+  // chordView.update(state.filteredData);
 }
 
 function setupControls() {
