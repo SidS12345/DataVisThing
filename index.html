@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Global Employment Migration Policy Dashboard</title>
-  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="styles.css" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
 </head>
 <body>
@@ -99,20 +99,10 @@
       </div>
       <svg id="lineView"></svg>
     </section>
-
-    <!-- Chord diagram temporarily disabled
-    <section class="panel panel-chord">
-      <div class="panel-header">
-        <h2>Regional Migration Chord Diagram</h2>
-        <p>Migration flows between World Bank regions. Arc width shows flow magnitude (per 10,000 population).</p>
-      </div>
-      <svg id="chordView"></svg>
-    </section>
-    -->
   </main>
 
   <div id="tooltip" class="tooltip hidden"></div>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/index.js"></script>
 </body>
 </html>

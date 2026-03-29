@@ -1,114 +1,136 @@
-import { groupTopDestinations } from "./utils.js";
+// barView.js
+// Renders a horizontal bar chart showing the top 10 destination countries
+// by total inbound migration flow for the current filters and year.
 
-export function createBarView(svgSelector, state, tooltip) {
-  const svg = d3.select(svgSelector)
-    .attr("preserveAspectRatio", "xMidYMid meet");
+import {
+  groupTopDestinations,
+  showTooltip,
+  moveTooltip,
+  hideTooltip
+} from './utils.js';
+
+export function barView(svg, props) {
+  const { 
+    data, 
+    year, 
+    hover, 
+    onHover 
+  } = props;
+
+  // work out dimensions from the parent container
+  const parent = svg.node().parentNode;
+  const parentWidth = parent.clientWidth;
+  const width = (parentWidth > 32) ? parentWidth - 32 : 400;
+  const height = svg.node().getBoundingClientRect().height || 400;
+  svg.attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet');
+
   const margin = { top: 20, right: 20, bottom: 44, left: 140 };
-  const g = svg.append("g");
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
 
-  let cachedW = 0, cachedH = 0;
-  let lastIncomeMap = new Map();
+  // root group
+  const g = svg.selectAll('g.bar-root').data([null]).join('g')
+    .attr('class', 'bar-root')
+    .attr('transform', `translate(${margin.left},${margin.top})`);
 
-  function ensureLayout() {
-    if (cachedW) return;
-    const parent = svg.node().parentNode;
-    cachedW = (parent.clientWidth - 32) || 400;
-    cachedH = svg.node().getBoundingClientRect().height || 400;
-    svg.attr("viewBox", `0 0 ${cachedW} ${cachedH}`);
-  }
+  // get the top 10 destinations sorted by total flow
+  const top10 = groupTopDestinations(data, year, 10);
 
-  window.addEventListener("resize", () => { cachedW = 0; cachedH = 0; });
+  // we need income levels for hover events so the heatmap can cross-highlight
+  const incomeLookup = new Map();
+  data.forEach(d => {
+    if (!incomeLookup.has(d.base_country_name)) {
+      incomeLookup.set(d.base_country_name, d.base_country_wb_income);
+    }
+    if (!incomeLookup.has(d.target_country_name)) {
+      incomeLookup.set(d.target_country_name, d.target_country_wb_income);
+    }
+  });
 
-  function showTooltip(event, html) {
-    tooltip.classed("hidden", false).html(html)
-      .style("left", `${event.pageX + 12}px`)
-      .style("top", `${event.pageY + 12}px`);
-  }
+  // --- scales ---
+  const maxTotal = d3.max(top10, d => d.total);
+  const xDomainMax = maxTotal || 1;
 
-  function hideTooltip() { tooltip.classed("hidden", true); }
+  const x = d3.scaleLinear()
+    .domain([0, xDomainMax])
+    .nice()
+    .range([0, innerWidth]);
 
-  function update(data) {
-    ensureLayout();
+  const y = d3.scaleBand()
+    .domain(top10.map(d => d.country))
+    .range([0, innerHeight])
+    .padding(0.15);
 
-    const innerWidth = cachedW - margin.left - margin.right;
-    const innerHeight = cachedH - margin.top - margin.bottom;
+  // --- axes ---
+  g.selectAll('g.y-axis').data([null]).join('g')
+    .attr('class', 'y-axis')
+    .call(d3.axisLeft(y));
 
-    g.attr("transform", `translate(${margin.left},${margin.top})`);
-    g.selectAll("*").remove();
+  g.selectAll('g.x-axis').data([null]).join('g')
+    .attr('class', 'x-axis')
+    .attr('transform', `translate(0,${innerHeight})`)
+    .call(d3.axisBottom(x).ticks(5));
 
-    const chartData = groupTopDestinations(data, state.selectedYear, 10);
-
-    // Build country → income lookup for cross-view highlighting
-    const incomeMap = new Map();
-    data.forEach(d => {
-      if (!incomeMap.has(d.base_country_name)) incomeMap.set(d.base_country_name, d.base_country_wb_income);
-      if (!incomeMap.has(d.target_country_name)) incomeMap.set(d.target_country_name, d.target_country_wb_income);
+  // --- bars with enter/update/exit transitions ---
+  g.selectAll('rect.bar')
+    .data(top10, d => d.country)
+    .join(
+      enter => enter.append('rect')
+        .attr('class', 'bar')
+        .attr('x', 0)
+        .attr('y', d => y(d.country))
+        .attr('width', 0)
+        .attr('height', y.bandwidth())
+        .call(en => en.transition('enter').duration(400)
+          .delay((_, i) => i * 30)
+          .attr('width', d => x(d.total))),
+      update => update.call(up => {
+        up.attr('y', d => y(d.country))
+          .attr('height', y.bandwidth());
+        up.transition('update').duration(300)
+          .attr('width', d => x(d.total));
+      }),
+      exit => exit.call(ex =>
+        ex.transition().duration(200).attr('width', 0).remove()
+      )
+    )
+    .on('mouseover', function(event, d) {
+      d3.select(this).classed('active', true);
+      const tooltipHtml = `<strong>${d.country}</strong><br/>Total: ${d.total.toFixed(2)} per 10K`;
+      showTooltip(event, tooltipHtml);
+      if (onHover) {
+        const income = incomeLookup.get(d.country);
+        onHover({ type: 'country', name: d.country, income: income });
+      }
+    })
+    .on('mousemove', function(event) {
+      moveTooltip(event);
+    })
+    .on('mouseout', function() {
+      d3.select(this).classed('active', false);
+      hideTooltip();
+      if (onHover) onHover(null);
+    })
+    // cross-view highlight: dim bars that don't match the current hover
+    .style('opacity', d => {
+      if (!hover) return 1;
+      if (hover.type === 'country') {
+        if (d.country === hover.name) return 1;
+        return 0.15;
+      }
+      if (hover.type === 'flow') {
+        if (d.country === hover.target) return 1;
+        return 0.15;
+      }
+      return 1;
     });
-    lastIncomeMap = incomeMap;
 
-    const x = d3.scaleLinear()
-      .domain([0, d3.max(chartData, d => d.total) || 1])
-      .nice()
-      .range([0, innerWidth]);
-
-    const y = d3.scaleBand()
-      .domain(chartData.map(d => d.country))
-      .range([0, innerHeight])
-      .padding(0.15);
-
-    g.append("g").call(d3.axisLeft(y));
-
-    g.append("g")
-      .attr("transform", `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(x).ticks(5));
-
-    const bars = g.selectAll(".bar")
-      .data(chartData, d => d.country)
-      .join("rect")
-      .attr("class", "bar")
-      .attr("x", 0)
-      .attr("y", d => y(d.country))
-      .attr("width", 0)
-      .attr("height", y.bandwidth())
-      .on("mouseover", function(event, d) {
-        d3.select(this).classed("active", true);
-        showTooltip(event, `<strong>${d.country}</strong><br/>Total: ${d.total.toFixed(2)} per 10K`);
-        state.hover = { type: "country", name: d.country, income: lastIncomeMap.get(d.country) };
-        if (state.onHighlight) state.onHighlight();
-      })
-      .on("mousemove", function(event) {
-        tooltip.style("left", `${event.pageX + 12}px`).style("top", `${event.pageY + 12}px`);
-      })
-      .on("mouseout", function() {
-        d3.select(this).classed("active", false);
-        hideTooltip();
-        state.hover = null;
-        if (state.onHighlight) state.onHighlight();
-      });
-
-    bars.transition().duration(400)
-      .delay((_d, i) => i * 30)
-      .attr("width", d => x(d.total));
-
-    g.append("text")
-      .attr("class", "axis-label")
-      .attr("x", innerWidth / 2)
-      .attr("y", innerHeight + 36)
-      .attr("text-anchor", "middle")
-      .text("Total migration flow (per 10K)");
-  }
-
-  function highlight() {
-    const h = state.hover;
-    g.selectAll(".bar")
-      .transition("highlight").duration(150)
-      .style("opacity", d => {
-        if (!h) return 1;
-        if (h.type === "country") return d.country === h.name ? 1 : 0.15;
-        if (h.type === "flow") return d.country === h.target ? 1 : 0.15;
-        return 1;
-      });
-  }
-
-  return { update, highlight };
+  // --- x-axis label ---
+  g.selectAll('text.x-label').data([null]).join('text')
+    .attr('class', 'x-label axis-label')
+    .attr('x', innerWidth / 2)
+    .attr('y', innerHeight + 36)
+    .attr('text-anchor', 'middle')
+    .text('Total migration flow (per 10K)');
 }

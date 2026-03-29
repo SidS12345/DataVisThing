@@ -1,15 +1,8 @@
-:root {
-  --bg: #f5f7fb;
-  --panel: #ffffff;
-  --text: #1f2937;
-  --muted: #6b7280;
-  --border: #dbe2ea;
-  --accent: #2563eb;
-  --accent-soft: #93c5fd;
-  --highlight: #ef4444;
-  --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-}
+/* =============================================
+   styles.css - main stylesheet for the migration dashboard
+   ============================================= */
 
+/* Reset */
 * {
   box-sizing: border-box;
 }
@@ -17,10 +10,11 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: var(--bg);
-  color: var(--text);
+  background: #f5f7fb;
+  color: #1f2937;
 }
 
+/* Page header at the top */
 .page-header {
   padding: 24px 32px 8px;
 }
@@ -32,18 +26,18 @@ body {
 
 .page-header p {
   margin: 0;
-  color: var(--muted);
+  color: #6b7280;
   max-width: 900px;
 }
 
-/* ── Controls panel ────────────────────────────────────── */
+/* Controls panel - year buttons, country dropdown, positive-only toggle */
 .controls-panel {
   margin: 0 32px 16px;
   padding: 16px 24px;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
   border-radius: 14px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .controls-header {
@@ -58,7 +52,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--muted);
+  color: #6b7280;
 }
 
 .controls-row {
@@ -77,14 +71,15 @@ body {
 .control-label {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--muted);
+  color: #6b7280;
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 
+/* Year toggle buttons */
 .year-buttons {
   display: flex;
-  border: 1px solid var(--border);
+  border: 1px solid #dbe2ea;
   border-radius: 8px;
   overflow: hidden;
 }
@@ -94,9 +89,9 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
   background: white;
-  color: var(--text);
+  color: #1f2937;
   border: none;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid #dbe2ea;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
@@ -106,58 +101,61 @@ body {
 }
 
 .year-btn:hover {
-  background: var(--bg);
+  background: #f5f7fb;
 }
 
 .year-btn.active {
-  background: var(--accent);
+  background: #2563eb;
   color: white;
 }
 
+/* Country dropdown */
 .control-group select {
   min-width: 200px;
   padding: 7px 10px;
-  border: 1px solid var(--border);
+  border: 1px solid #dbe2ea;
   border-radius: 8px;
   background: white;
   font-size: 0.85rem;
-  color: var(--text);
+  color: #1f2937;
 }
 
+/* Positive-only checkbox */
 .toggle-label {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.85rem;
-  color: var(--text);
+  color: #1f2937;
   cursor: pointer;
   padding: 7px 0;
 }
 
 .toggle-label input[type="checkbox"] {
-  accent-color: var(--accent);
+  accent-color: #2563eb;
   width: 16px;
   height: 16px;
 }
 
+/* Reset all button */
 .reset-all-btn {
   padding: 6px 16px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--muted);
+  color: #6b7280;
   background: transparent;
-  border: 1px solid var(--border);
+  border: 1px solid #dbe2ea;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.15s;
 }
 
 .reset-all-btn:hover {
-  color: var(--highlight);
-  border-color: var(--highlight);
+  color: #ef4444;
+  border-color: #ef4444;
 }
 
-/* ── Active filter summary ────────────────────────────── */
+/* Active filter pills that show below the controls */
 .active-filters {
   display: flex;
   align-items: center;
@@ -165,7 +163,7 @@ body {
   gap: 8px;
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #dbe2ea;
   min-height: 24px;
 }
 
@@ -175,7 +173,7 @@ body {
 
 .active-filters-summary {
   font-size: 0.82rem;
-  color: var(--muted);
+  color: #6b7280;
 }
 
 .filter-pill {
@@ -185,7 +183,7 @@ body {
   padding: 2px 6px 2px 10px;
   font-size: 0.78rem;
   font-weight: 500;
-  color: var(--accent);
+  color: #2563eb;
   background: rgba(37, 99, 235, 0.07);
   border: 1px solid rgba(37, 99, 235, 0.18);
   border-radius: 100px;
@@ -199,7 +197,7 @@ body {
   height: 16px;
   padding: 0;
   font-size: 0.8rem;
-  color: var(--accent);
+  color: #2563eb;
   background: transparent;
   border: none;
   border-radius: 50%;
@@ -212,15 +210,15 @@ body {
   background: rgba(37, 99, 235, 0.15);
 }
 
-/* Key Insights bar */
+/* Key insights bar - shows computed insights about the current data */
 .insights-bar {
   padding: 14px 24px 14px 20px;
   margin: 0 32px 20px;
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
+  border-left: 3px solid #2563eb;
   border-radius: 0 12px 12px 0;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .insights-header {
@@ -228,7 +226,7 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--accent);
+  color: #2563eb;
   margin-bottom: 8px;
 }
 
@@ -243,7 +241,7 @@ body {
 
 .insight-item {
   font-size: 0.88rem;
-  color: var(--muted);
+  color: #6b7280;
   line-height: 1.45;
   padding-left: 14px;
   position: relative;
@@ -253,12 +251,12 @@ body {
   content: "\2022";
   position: absolute;
   left: 0;
-  color: var(--accent);
+  color: #2563eb;
   font-weight: bold;
 }
 
 .insight-item strong {
-  color: var(--text);
+  color: #1f2937;
   font-weight: 600;
 }
 
@@ -268,6 +266,7 @@ body {
   }
 }
 
+/* Main dashboard grid - holds all the chart panels */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -277,11 +276,12 @@ body {
   align-items: stretch;
 }
 
+/* Each chart panel is a white card */
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
   border-radius: 14px;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   padding: 16px;
   display: flex;
   flex-direction: column;
@@ -296,6 +296,7 @@ body {
   grid-row: auto;
 }
 
+/* Heatmap spans both columns */
 .panel-heatmap {
   grid-column: 1 / -1;
   order: -1;
@@ -305,6 +306,7 @@ body {
   min-height: 380px;
 }
 
+/* Bar between heatmap title and SVG showing the current selection */
 .heatmap-bar {
   display: flex;
   align-items: center;
@@ -315,7 +317,7 @@ body {
 
 .heatmap-selection-label {
   font-size: 0.85rem;
-  color: var(--accent);
+  color: #2563eb;
   font-weight: 600;
 }
 
@@ -323,27 +325,20 @@ body {
   padding: 4px 14px;
   font-size: 0.8rem;
   font-weight: 500;
-  color: var(--accent);
+  color: #2563eb;
   background: transparent;
-  border: 1px solid var(--accent);
+  border: 1px solid #2563eb;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
 }
 
 .heatmap-clear-btn:hover {
-  background: var(--accent);
+  background: #2563eb;
   color: white;
 }
 
-.panel-chord {
-  grid-column: 1 / -1;
-}
-
-#chordView {
-  min-height: 550px;
-}
-
+/* Line chart spans both columns */
 .panel-line {
   grid-column: 1 / -1;
 }
@@ -361,6 +356,7 @@ body {
   pointer-events: none;
 }
 
+/* Panel header - title + description above each chart */
 .panel-header h2 {
   margin: 0 0 4px;
   font-size: 1.15rem;
@@ -368,10 +364,11 @@ body {
 
 .panel-header p {
   margin: 0 0 12px;
-  color: var(--muted);
+  color: #6b7280;
   font-size: 0.92rem;
 }
 
+/* Global SVG defaults */
 svg {
   width: 100%;
   height: 100%;
@@ -382,6 +379,7 @@ svg text {
   font-family: inherit;
 }
 
+/* Map controls bar - slider + status label above the map */
 .map-controls-bar {
   display: flex;
   align-items: center;
@@ -392,7 +390,7 @@ svg text {
 
 .map-topn-label {
   font-size: 0.85rem;
-  color: var(--text);
+  color: #1f2937;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -406,13 +404,13 @@ svg text {
 
 .map-topn-label input[type="range"] {
   width: 120px;
-  accent-color: var(--accent);
+  accent-color: #2563eb;
 }
 
 .map-topn-label input[type="number"] {
   width: 72px;
   padding: 3px 6px;
-  border: 1px solid var(--border);
+  border: 1px solid #dbe2ea;
   border-radius: 6px;
   font-size: 0.85rem;
   text-align: center;
@@ -420,19 +418,17 @@ svg text {
 
 .map-status {
   font-size: 0.82rem;
-  color: var(--muted);
+  color: #6b7280;
   margin-right: 50px;
   margin-left: auto;
 }
 
+/* Map SVG - ocean background, grab cursor for pan */
 #mapView {
   background: #aad3df;
   border-radius: 10px;
   cursor: grab;
-  /* Lock the map to its projection-calculated height so that
-     flex-grow from .panel svg cannot inflate it.  Without this
-     the SVG stretches to fill the grid row, and yMid centering
-     pushes the map content downward. */
+  /* lock height to projection so it doesn't stretch with the grid row */
   flex: 0 0 auto;
   min-height: 0;
 }
@@ -445,11 +441,13 @@ svg text {
   min-height: 0;
 }
 
+/* Axis labels used across all charts */
 .axis-label {
   font-size: 0.85rem;
-  fill: var(--muted);
+  fill: #6b7280;
 }
 
+/* Shared tooltip that follows the mouse */
 .tooltip {
   position: absolute;
   pointer-events: none;
@@ -459,7 +457,7 @@ svg text {
   border-radius: 8px;
   font-size: 0.85rem;
   line-height: 1.35;
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   z-index: 999;
 }
 
@@ -467,8 +465,9 @@ svg text {
   display: none;
 }
 
+/* Map country endpoint dots */
 .country-node {
-  fill: var(--accent);
+  fill: #2563eb;
   stroke: #fff;
   stroke-width: 1.5;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
@@ -476,14 +475,15 @@ svg text {
 }
 
 .country-node:hover {
-  fill: var(--highlight);
+  fill: #ef4444;
 }
 
 .country-node.selected {
-  fill: var(--highlight);
+  fill: #ef4444;
   r: 7;
 }
 
+/* Flow arcs on the map */
 .flow-line {
   fill: none;
   stroke-linecap: round;
@@ -491,12 +491,12 @@ svg text {
 }
 
 .flow-line.flow-positive {
-  stroke: var(--accent);
+  stroke: #2563eb;
   stroke-opacity: 0.35;
 }
 
 .flow-line.flow-negative {
-  stroke: var(--highlight);
+  stroke: #ef4444;
   stroke-opacity: 0.3;
 }
 
@@ -506,31 +506,33 @@ svg text {
   filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.25));
 }
 
+/* Bar chart bars */
 .bar {
-  fill: var(--accent);
+  fill: #2563eb;
 }
 
 .bar.active {
-  fill: var(--highlight);
+  fill: #ef4444;
 }
 
+/* Line chart styles (mostly set inline by D3, these are fallbacks) */
 .line-path {
   fill: none;
-  stroke: var(--accent);
+  stroke: #2563eb;
   stroke-width: 2.5;
 }
 
 .point {
-  fill: var(--accent);
+  fill: #2563eb;
 }
 
-/* Zoom controls */
+/* Zoom +/- buttons on the map panel */
 .zoom-controls {
   display: flex;
   flex-direction: column;
   gap: 0;
-  background: var(--panel);
-  border: 1px solid var(--border);
+  background: #ffffff;
+  border: 1px solid #dbe2ea;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -544,8 +546,8 @@ svg text {
   justify-content: center;
   font-size: 1.2rem;
   font-weight: 500;
-  color: var(--text);
-  background: var(--panel);
+  color: #1f2937;
+  background: #ffffff;
   border: none;
   cursor: pointer;
   padding: 0;
@@ -554,19 +556,19 @@ svg text {
 }
 
 .zoom-btn:hover {
-  background: var(--bg);
-  color: var(--accent);
+  background: #f5f7fb;
+  color: #2563eb;
 }
 
 .zoom-btn:active {
-  background: var(--border);
+  background: #dbe2ea;
 }
 
 .zoom-btn + .zoom-btn {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid #dbe2ea;
 }
 
-
+/* Responsive: stack panels on narrow screens */
 @media (max-width: 1000px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
